@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>For Kelly ❤️</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Quicksand', sans-serif;
+    }
+    .font-cursive {
+      font-family: 'Dancing Script', cursive;
+    }
+    
+    /* Heart particles background */
+    @keyframes floatUp {
+      0% { transform: translateY(105vh) scale(0.6) rotate(0deg); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.8; }
+      100% { transform: translateY(-10vh) scale(1.2) rotate(360deg); opacity: 0; }
+    }
+    @keyframes floatDown {
+      0% { transform: translateY(-10vh) scale(0.6) rotate(0deg); opacity: 0; }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.8; }
+      100% { transform: translateY(105vh) scale(1.2) rotate(-360deg); opacity: 0; }
+    }
+    
+    .heart-up {
+      position: absolute;
+      animation: floatUp linear infinite;
+      pointer-events: none;
+    }
+    .heart-down {
+      position: absolute;
+      animation: floatDown linear infinite;
+      pointer-events: none;
+    }
+
+    /* Envelope animation */
+    .envelope-wrapper {
+      perspective: 1000px;
+    }
+    .envelope {
+      transition: transform 0.6s ease-in-out;
+      transform-style: preserve-3d;
+    }
+    .envelope.open .flap {
+      transform: rotateX(180deg);
+    }
+    .flap {
+      transform-origin: top;
+      transition: transform 0.5s ease-in-out 0.2s;
+    }
+
+    /* Custom Scrollbar for letter modal */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #fbcfe8;
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #f43f5e;
+      border-radius: 10px;
+    }
+
+    /* Dragging state */
+    .dragging {
+      opacity: 0.4;
+      transform: scale(1.1);
+    }
+    .slot-over {
+      border-color: #f43f5e !important;
+      background-color: #ffe4e6 !important;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-rose-100 via-pink-200 to-red-100 min-h-screen text-slate-800 relative overflow-x-hidden flex items-center justify-center p-4 selection:bg-pink-300">
+
+  <!-- Background Hearts Container -->
+  <div id="hearts-container" class="fixed inset-0 pointer-events-none z-0 overflow-hidden"></div>
+
+  <!-- Music Toggle Control -->
+  <button id="music-toggle" class="fixed top-4 right-4 z-50 bg-white/80 backdrop-blur-md border border-rose-200 shadow-md text-rose-600 px-4 py-2 rounded-full font-medium hover:bg-rose-50 hover:scale-105 transition flex items-center gap-2">
+    <span id="music-icon">🎵</span>
+    <span id="music-text" class="text-sm">Play Music</span>
+  </button>
+
+  <!-- MAIN CONTAINER WITH SCREENS -->
+  <main class="relative z-10 w-full max-w-lg mx-auto">
+
+    <!-- ================= SCREEN 1: START SCREEN ================= -->
+    <section id="screen-start" class="bg-white/85 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/60 text-center flex flex-col items-center justify-center min-h-[420px] transition-all duration-500">
+      <div class="w-24 h-24 bg-rose-100 rounded-full flex items-center justify-center mb-6 shadow-inner animate-bounce">
+        <span class="text-5xl">💖</span>
+      </div>
+      <h1 class="text-3xl font-bold text-rose-600 mb-3">Hi Kelly!</h1>
+      <p class="text-gray-600 mb-8 max-w-xs text-sm leading-relaxed">
+        I prepared a little something special just for you. Turn up your volume and click start when ready!
+      </p>
+      <button id="btn-start" class="w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-rose-300/50 hover:scale-[1.02] active:scale-95 transition-all text-lg flex items-center justify-center gap-2">
+        <span>Start Experience</span>
+        <span>✨</span>
+      </button>
+    </section>
+
+    <!-- ================= SCREEN 2: INTRO & DIALOGUE ================= -->
+    <section id="screen-intro" class="hidden bg-white/85 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/60 text-center flex-col items-center justify-center min-h-[420px] transition-all duration-500">
+      <div class="text-4xl mb-6 animate-pulse">💬</div>
+      <div class="bg-rose-50/80 border border-rose-200 rounded-2xl p-6 mb-8 w-full min-h-[160px] flex items-center justify-center shadow-inner">
+        <p id="typed-text" class="text-lg md:text-xl font-medium text-slate-700 leading-relaxed min-h-[3rem]"></p>
+      </div>
+      <button id="btn-intro-next" class="hidden w-full py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl shadow-lg hover:shadow-rose-300/50 hover:scale-[1.02] active:scale-95 transition-all text-lg items-center justify-center gap-2">
+        <span>Let's Play! 🎮</span>
+      </button>
+    </section>
+
+    <!-- ================= SCREEN 3: GAME / PUZZLE ================= -->
+    <section id="screen-game" class="hidden bg-white/85 backdrop-blur-md rounded-3xl p-6 md:p-8 shadow-2xl border border-white/60 text-center flex-col items-center transition-all duration-500">
+      <div class="inline-block bg-rose-100 text-rose-700 font-semibold px-4 py-1.5 rounded-full text-xs mb-3">Guessing Game</div>
+      <h2 class="text-2xl font-bold text-slate-800 mb-6">Who do you think I like? 🤔</h2>
+
+      <!-- Available Letters Pool -->
+      <div class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 shadow-inner">
+        <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">Available Letters (Tap or Drag)</p>
+        <div id="letters-pool" class="flex flex-wrap justify-center gap-2 min-h-[50px] items-center">
+          <!-- Dynamically populated letters -->
+        </div>
+      </div>
+
+      <!-- 5 Target Boxes -->
+      <div class="mb-8">
+        <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">Fill the 5 boxes</p>
+        <div id="letter-slots" class="flex justify-center gap-2">
+          <div class="slot w-12 h-14 md:w-14 md:h-16 border-2 border-dashed border-rose-300 rounded-xl flex items-center justify-center text-xl md:text-2xl font-bold text-rose-600 bg-white shadow-sm transition-all" data-index="0"></div>
+          <div class="slot w-12 h-14 md:w-14 md:h-16 border-2 border-dashed border-rose-300 rounded-xl flex items-center justify-center text-xl md:text-2xl font-bold text-rose-600 bg-white shadow-sm transition-all" data-index="1"></div>
+          <div class="slot w-12 h-14 md:w-14 md:h-16 border-2 border-dashed border-rose-300 rounded-xl flex items-center justify-center text-xl md:text-2xl font-bold text-rose-600 bg-white shadow-sm transition-all" data-index="2"></div>
+          <div class="slot w-12 h-14 md:w-14 md:h-16 border-2 border-dashed border-rose-300 rounded-xl flex items-center justify-center text-xl md:text-2xl font-bold text-rose-600 bg-white shadow-sm transition-all" data-index="3"></div>
+          <div class="slot w-12 h-14 md:w-14 md:h-16 border-2 border-dashed border-rose-300 rounded-xl flex items-center justify-center text-xl md:text-2xl font-bold text-rose-600 bg-white shadow-sm transition-all" data-index="4"></div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-3 w-full mb-6">
+        <button id="btn-reset-game" class="w-1/3 py-3 bg-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-300 transition text-sm">Clear 🔄</button>
+        <button id="btn-submit-game" class="w-2/3 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-xl shadow-md hover:scale-[1.02] active:scale-95 transition text-base">Done! ✨</button>
+      </div>
+
+      <!-- Hints Accordion / Drawer -->
+      <div class="w-full border-t border-rose-100 pt-4">
+        <button id="btn-toggle-hints" class="w-full flex items-center justify-between text-left text-sm font-semibold text-rose-600 bg-rose-50 p-3 rounded-xl hover:bg-rose-100 transition">
+          <span class="flex items-center gap-2"><span>💡</span> Need Hints? (8 Available)</span>
+          <span id="hint-arrow" class="transition-transform duration-300">▼</span>
+        </button>
+        <div id="hints-accordion" class="hidden mt-3 space-y-2 text-left text-xs md:text-sm">
+          <div class="hint-item bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+            <span class="font-bold text-rose-500">Hint 1:</span> She has a <strong class="text-rose-600">K</strong> in her name
+          </div>
+          <div class="hint-item bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+            <span class="font-bold text-rose-500">Hint 2:</span> She has an <strong class="text-rose-600">E</strong> in her name
+          </div>
+          <div class="hint-item bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+            <span class="font-bold text-rose-500">Hint 3:</span> She has double letters in her 1st name (e.g. emma)
+          </div>
+          <div class="hint-item bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+            <span class="font-bold text-rose-500">Hint 4:</span> She's from the same class as me 🏫
+          </div>
+          <div class="hint-item bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+            <span class="font-bold text-rose-500">Hint 5:</span> She's shorter than me 📏
+          </div>
+          <div class="hint-item bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+            <span class="font-bold text-rose-500">Hint 6:</span> I make cat stickers of her 😹
+          </div>
+          <div class="hint-item bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+            <span class="font-bold text-rose-500">Hint 7:</span> She watches S.W.A.T 📺
+          </div>
+          <div class="hint-item bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+            <span class="font-bold text-rose-500">Hint 8:</span> She's very cute and pretty 🥰
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SCREEN 4: INCORRECT RESULT ================= -->
+    <section id="screen-wrong" class="hidden bg-white/85 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/60 text-center flex-col items-center justify-center min-h-[380px] transition-all duration-500">
+      <div class="text-6xl mb-4 animate-bounce">😭</div>
+      <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-4">wait no not her 😭</h2>
+      <p class="text-slate-600 text-sm mb-6">That's not the name! Try reading the hints and try again ❤️</p>
+      <button id="btn-try-again" class="px-8 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition">
+        Try Again 🔄
+      </button>
+    </section>
+
+    <!-- ================= SCREEN 5: CORRECT RESULT ================= -->
+    <section id="screen-correct" class="hidden bg-white/85 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/60 text-center flex-col items-center justify-center min-h-[380px] transition-all duration-500">
+      <div class="text-6xl mb-4 animate-bounce">😁🎉</div>
+      <h2 class="text-2xl md:text-3xl font-bold text-rose-600 mb-4">wow yes thats correct 😁</h2>
+      <p class="text-slate-600 text-sm mb-6">You figured it out! Now I have something very important to show you...</p>
+      <button id="btn-goto-envelope" class="px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl shadow-lg hover:scale-105 active:scale-95 transition text-lg">
+        Continue ❤️
+      </button>
+    </section>
+
+    <!-- ================= SCREEN 6: ENVELOPE / LETTER TRIGGER ================= -->
+    <section id="screen-envelope" class="hidden bg-white/85 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/60 text-center flex-col items-center justify-center min-h-[420px] transition-all duration-500">
+      <p class="text-rose-500 font-bold uppercase tracking-widest text-xs mb-6">A Letter For You</p>
+      
+      <div id="envelope-clickable" class="envelope-wrapper cursor-pointer group my-4">
+        <div class="envelope relative w-64 h-44 bg-rose-300 rounded-2xl shadow-xl flex items-center justify-center border-2 border-rose-400 group-hover:scale-105 transition-transform duration-300">
+          <div class="absolute inset-0 bg-rose-400/30 rounded-2xl"></div>
+          <div class="text-6xl z-10 filter drop-shadow-md group-hover:animate-bounce">💌</div>
+          <div class="absolute bottom-3 text-xs font-bold text-rose-800 tracking-wider">CLICK TO OPEN</div>
+        </div>
+      </div>
+
+      <p class="text-rose-600 font-bold text-lg animate-pulse mt-4">click me to open!</p>
+    </section>
+
+  </main>
+
+  <!-- ================= MODAL: LETTER READ SCREEN ================= -->
+  <div id="modal-letter" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-amber-50 rounded-3xl shadow-2xl border-4 border-rose-200 max-w-lg w-full p-6 md:p-8 max-h-[85vh] flex flex-col relative animate-fade-in my-auto">
+      
+      <!-- Top Decor -->
+      <div class="flex justify-between items-center border-b border-rose-200 pb-3 mb-4">
+        <span class="text-xl">🌸</span>
+        <span class="font-cursive text-2xl font-bold text-rose-600">Confession Letter</span>
+        <span class="text-xl">🌸</span>
+      </div>
+
+      <!-- Letter Content Scrollable -->
+      <div class="overflow-y-auto pr-2 custom-scrollbar text-slate-700 leading-relaxed space-y-4 text-sm md:text-base font-medium">
+        <p class="font-bold text-rose-700 text-base md:text-lg">Dear kelly,</p>
+
+        <p>
+          Ive been waiting for this day to tell you something i didnt say before, but i wanted to confess during your birthday, but i was afraid so i postponed it to now, i dont know why i was afraid, maybe because i wasnt ready, or maybe because i was afraid of being rejected.
+        </p>
+
+        <p>
+          But now i want to tell you that I love you ❤️ i truly do. Every day when i meet you at school i cant help but look at you, youre the person ive been looking forward to meet every single day. Your smile, your kind and caring personality, your shyness, everything about you is perfect in my eyes.
+        </p>
+
+        <p>
+          I want to express my feelings every time i meet you but i was afraid, and i knew you were really shy(i think?)
+          You're just so cute i love you sm i wish i could hug you omd you're so pretty and cute omd omd❤️❤️❤️❤️❤️
+        </p>
+      </div>
+
+
+  <!-- JavaScript Code -->
+  <script>
+    // --- State & Variables ---
+    const targetWord = "KELLY";
+    const letterPoolList = ["K", "E", "L", "L", "Y", "A", "M", "S", "R", "T"];
+    let currentSlots = ["", "", "", "", ""];
+    let selectedLetterElem = null;
+
+    // --- Audio Synthesizer (Web Audio API) ---
+    let audioCtx = null;
+    let isMusicPlaying = false;
+    let musicInterval = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playNote(freq, duration = 1.2, type = 'sine') {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playChime(isSuccess = true) {
+      initAudio();
+      if (isSuccess) {
+        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+          setTimeout(() => playNote(freq, 0.4, 'triangle'), idx * 120);
+        });
+      } else {
+        [300, 250, 200].forEach((freq, idx) => {
+          setTimeout(() => playNote(freq, 0.4, 'sawtooth'), idx * 150);
+        });
+      }
+    }
+
+    function startAmbientMusic() {
+      initAudio();
+      isMusicPlaying = true;
+      document.getElementById('music-icon').textContent = "🔊";
+      document.getElementById('music-text').textContent = "Playing";
+      
+      const chords = [
+        [261.63, 329.63, 392.00], // C
+        [220.00, 261.63, 329.63], // Am
+        [174.61, 220.00, 261.63], // F
+        [196.00, 246.94, 293.66]  // G
+      ];
+      let chordIndex = 0;
+
+      musicInterval = setInterval(() => {
+        if (!isMusicPlaying) return;
+        const chord = chords[chordIndex];
+        chord.forEach(freq => playNote(freq, 3.5, 'sine'));
+        chordIndex = (chordIndex + 1) % chords.length;
+      }, 3500);
+    }
+
+    function stopAmbientMusic() {
+      isMusicPlaying = false;
+      if (musicInterval) clearInterval(musicInterval);
+      document.getElementById('music-icon').textContent = "🎵";
+      document.getElementById('music-text').textContent = "Play Music";
+    }
+
+    document.getElementById('music-toggle').addEventListener('click', () => {
+      if (isMusicPlaying) {
+        stopAmbientMusic();
+      } else {
+        startAmbientMusic();
+      }
+    });
+
+    // --- Floating Hearts Generator ---
+    function createHearts() {
+      const container = document.getElementById('hearts-container');
+      const heartEmojis = ['💖', '💕', '💗', '💓', '🌸', '❤️'];
+      
+      for (let i = 0; i < 25; i++) {
+        const heart = document.createElement('div');
+        const isUp = Math.random() > 0.4;
+        heart.className = isUp ? 'heart-up' : 'heart-down';
+        heart.textContent = heartEmojis[Math.floor(Math.random() * heartEmojis.length)];
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.animationDuration = (6 + Math.random() * 8) + 's';
+        heart.style.animationDelay = (Math.random() * 5) + 's';
+        heart.style.fontSize = (16 + Math.random() * 20) + 'px';
+        container.appendChild(heart);
+      }
+    }
+
+    // --- Screen Navigation Helper ---
+    function showScreen(screenId) {
+      const screens = ['screen-start', 'screen-intro', 'screen-game', 'screen-wrong', 'screen-correct', 'screen-envelope'];
+      screens.forEach(id => {
+        const el = document.getElementById(id);
+        if (id === screenId) {
+          el.classList.remove('hidden');
+          el.classList.add('flex');
+        } else {
+          el.classList.add('hidden');
+          el.classList.remove('flex');
+        }
+      });
+    }
+
+    // --- Screen 1 -> Screen 2 Transition ---
+    document.getElementById('btn-start').addEventListener('click', () => {
+      startAmbientMusic();
+      showScreen('screen-intro');
+      startTypewriter();
+    });
+
+    // --- Typewriter Effect for Screen 2 ---
+    const dialogueText = "okay so, i want to confess today and yes kelly im going to tell you today who i adore, but before that, lets play a game 😁";
+    
+    function startTypewriter() {
+      const textContainer = document.getElementById('typed-text');
+      const nextBtn = document.getElementById('btn-intro-next');
+      textContainer.textContent = "";
+      let idx = 0;
+
+      const timer = setInterval(() => {
+        if (idx < dialogueText.length) {
+          textContainer.textContent += dialogueText.charAt(idx);
+          idx++;
+        } else {
+          clearInterval(timer);
+          nextBtn.classList.remove('hidden');
+          nextBtn.classList.add('flex');
+        }
+      }, 45);
+    }
+
+    document.getElementById('btn-intro-next').addEventListener('click', () => {
+      showScreen('screen-game');
+      initGame();
+    });
+
+    // --- Puzzle Game Logic ---
+    function initGame() {
+      const pool = document.getElementById('letters-pool');
+      pool.innerHTML = '';
+      currentSlots = ["", "", "", "", ""];
+      updateSlotsUI();
+
+      // Shuffle available letters
+      const shuffled = [...letterPoolList].sort(() => Math.random() - 0.5);
+
+      shuffled.forEach((char, index) => {
+        const tile = document.createElement('div');
+        tile.className = 'letter-tile w-10 h-10 md:w-12 md:h-12 bg-white border-2 border-rose-300 shadow-md rounded-xl flex items-center justify-center font-bold text-slate-700 text-lg md:text-xl cursor-pointer hover:bg-rose-50 hover:scale-105 active:scale-95 transition-all select-none';
+        tile.textContent = char;
+        tile.dataset.id = 'letter-' + index;
+        tile.dataset.char = char;
+        tile.draggable = true;
+
+        // Drag & Drop handlers
+        tile.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', JSON.stringify({ id: tile.dataset.id, char: char }));
+          tile.classList.add('dragging');
+        });
+        tile.addEventListener('dragend', () => tile.classList.remove('dragging'));
+
+        // Tap/Click to place in first open slot
+        tile.addEventListener('click', () => {
+          if (tile.classList.contains('opacity-20')) return; // already used
+          const emptyIndex = currentSlots.findIndex(s => s === "");
+          if (emptyIndex !== -1) {
+            currentSlots[emptyIndex] = { char: char, id: tile.dataset.id };
+            tile.classList.add('opacity-20', 'pointer-events-none');
+            updateSlotsUI();
+          }
+        });
+
+        pool.appendChild(tile);
+      });
+
+      // Slot drop handlers
+      const slotElems = document.querySelectorAll('.slot');
+      slotElems.forEach(slot => {
+        slot.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          slot.classList.add('slot-over');
+        });
+        slot.addEventListener('dragleave', () => slot.classList.remove('slot-over'));
+        slot.addEventListener('drop', (e) => {
+          e.preventDefault();
+          slot.classList.remove('slot-over');
+          const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+          const slotIdx = parseInt(slot.dataset.index);
+
+          // Return old tile if slot had letter
+          if (currentSlots[slotIdx]) {
+            const oldTile = document.querySelector(`[data-id="${currentSlots[slotIdx].id}"]`);
+            if (oldTile) oldTile.classList.remove('opacity-20', 'pointer-events-none');
+          }
+
+          // Disable tile in pool
+          const newTile = document.querySelector(`[data-id="${data.id}"]`);
+          if (newTile) newTile.classList.add('opacity-20', 'pointer-events-none');
+
+          currentSlots[slotIdx] = { char: data.char, id: data.id };
+          updateSlotsUI();
+        });
+
+        // Click slot to clear it
+        slot.addEventListener('click', () => {
+          const slotIdx = parseInt(slot.dataset.index);
+          if (currentSlots[slotIdx]) {
+            const tile = document.querySelector(`[data-id="${currentSlots[slotIdx].id}"]`);
+            if (tile) tile.classList.remove('opacity-20', 'pointer-events-none');
+            currentSlots[slotIdx] = "";
+            updateSlotsUI();
+          }
+        });
+      });
+    }
+
+    function updateSlotsUI() {
+      const slotElems = document.querySelectorAll('.slot');
+      slotElems.forEach((slot, idx) => {
+        const val = currentSlots[idx];
+        slot.textContent = val ? val.char : "";
+        if (val) {
+          slot.classList.add('border-solid', 'bg-rose-50');
+          slot.classList.remove('border-dashed');
+        } else {
+          slot.classList.remove('border-solid', 'bg-rose-50');
+          slot.classList.add('border-dashed');
+        }
+      });
+    }
+
+    document.getElementById('btn-reset-game').addEventListener('click', () => {
+      initGame();
+    });
+
+    document.getElementById('btn-submit-game').addEventListener('click', () => {
+      const answer = currentSlots.map(s => s ? s.char : "").join("");
+      if (answer.toUpperCase() === targetWord) {
+        playChime(true);
+        if (typeof confetti === 'function') {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+        showScreen('screen-correct');
+      } else {
+        playChime(false);
+        showScreen('screen-wrong');
+      }
+    });
+
+    document.getElementById('btn-try-again').addEventListener('click', () => {
+      showScreen('screen-game');
+      initGame();
+    });
+
+    // Hints Accordion
+    document.getElementById('btn-toggle-hints').addEventListener('click', () => {
+      const accordion = document.getElementById('hints-accordion');
+      const arrow = document.getElementById('hint-arrow');
+      if (accordion.classList.contains('hidden')) {
+        accordion.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)';
+      } else {
+        accordion.classList.add('hidden');
+        arrow.style.transform = 'rotate(0deg)';
+      }
+    });
+
+    // Screen Correct -> Screen Envelope
+    document.getElementById('btn-goto-envelope').addEventListener('click', () => {
+      showScreen('screen-envelope');
+    });
+
+    // Envelope Click -> Open Modal
+    document.getElementById('envelope-clickable').addEventListener('click', () => {
+      document.getElementById('modal-letter').classList.remove('hidden');
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 80, spread: 80, origin: { y: 0.5 } });
+      }
+    });
+
+    // Initialize Page
+    window.addEventListener('DOMContentLoaded', () => {
+      createHearts();
+    });
+  </script>
+</body>
+</html>
